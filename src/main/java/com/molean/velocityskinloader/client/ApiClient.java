@@ -98,9 +98,10 @@ public abstract class ApiClient {
         return send;
     }
 
-    protected void errorHandle(HttpResponse<?> response) throws Exception{
+    protected void errorHandle(HttpResponse<?> response) throws Exception {
         if (response.statusCode() / 100 != 2) {
-            throw new RuntimeException();
+            String errorMsg = response.body().toString(); // 安全地转成字符串
+            throw new RuntimeException("HTTP " + response.statusCode() + " 错误内容: " + errorMsg);
         }
     }
 }

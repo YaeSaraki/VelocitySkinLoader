@@ -13,11 +13,10 @@ public class SkinInfo {
     private SkinData data;
     private Long timestamp;
     private Long duration;
-    private Long account;
+    // 新的account 是 16位 String
+    private String account;
     private String server;
     @SerializedName("private")
     private boolean privateSkin;
     private long views;
-
-
 }

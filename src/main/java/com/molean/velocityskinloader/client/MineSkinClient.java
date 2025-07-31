@@ -32,10 +32,13 @@ public class MineSkinClient extends ApiClient {
     protected void errorHandle(HttpResponse<?> response) throws MineSkinAPIException {
         switch (response.statusCode()) {
             case 400, 500 -> {
-                throw gson.fromJson(((HttpResponse<String>) (response)).body(), SkinGenerateException.class);
+//                throw gson.fromJson(((HttpResponse<String>) (response)).body(), SkinGenerateException.class);
+                throw new RuntimeException("MineSkin Error: " + response.body());
             }
             case 429 -> {
-                throw gson.fromJson(((HttpResponse<String>) (response)).body(), RequestTooSoonException.class);
+//                throw gson.fromJson(((HttpResponse<String>) (response)).body(), RequestTooSoonException.class);
+                throw new RuntimeException("MineSkin Error: " + response.body());
+
             }
             case 200 -> {
             }
@@ -68,15 +71,21 @@ public class MineSkinClient extends ApiClient {
         }
     }
 
-    public SkinInfo generateByUrl(GenerateByUrl generateByUrl) throws MineSkinAPIException {
-        HttpResponse<String> post;
-        try {
-            post = postJson("/generate/url", gson.toJson(generateByUrl));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+    public SkinInfo generateByUrl(GenerateByUrl generateByUrl) throws MineSkinAPIException, InterruptedException {
+        int retry = 3;
+        while (retry-- > 0) {
+            try {
+                HttpResponse<String> post = postJson("/generate/url", gson.toJson(generateByUrl));
+                errorHandle(post);
+                return gson.fromJson(post.body(), SkinInfo.class);
+            } catch (RequestTooSoonException e) {
+//                System.out.println("请求过快，等待 5 秒再试");
+            } catch (Exception e) {
+//                throw new RuntimeException(e);
+                  Thread.sleep(5000); // 可以从 e 中提取真正的 delay
+            }
         }
-        errorHandle(post);
-        return gson.fromJson(post.body(), SkinInfo.class);
+        throw new RuntimeException("多次重试后依然失败");
     }
 
     public SkinInfo generateByUser(GenerateByUser generateByUser) throws MineSkinAPIException {
